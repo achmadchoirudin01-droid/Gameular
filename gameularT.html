@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ular Tangga TJKT / DDTKJ</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(135deg,#071e3d,#0b63a3);color:#10233d}
+button{font:inherit;cursor:pointer}
+.app{max-width:1500px;margin:auto;padding:16px}
+header{background:linear-gradient(135deg,#0b63a3,#12a4d9);color:#fff;border-radius:22px;padding:18px 22px;box-shadow:0 10px 30px #0004;margin-bottom:14px}
+header h1{margin:0;font-size:clamp(25px,4vw,44px)}
+header p{margin:6px 0 0;font-size:17px;font-weight:bold}
+.layout{display:grid;grid-template-columns:minmax(500px,1.45fr) minmax(330px,.75fr);gap:14px}
+.card{background:#fff;border-radius:20px;box-shadow:0 8px 25px #0003}
+.board-wrap{padding:12px}
+.board{display:grid;grid-template-columns:repeat(10,1fr);aspect-ratio:1/1;border:4px solid #0b4779;border-radius:13px;overflow:hidden;background:#fff}
+.cell{position:relative;border:1px solid #7897aa;display:flex;align-items:flex-start;justify-content:flex-start;padding:5px;font-weight:900;font-size:clamp(11px,1.5vw,18px);min-width:0}
+.cell:nth-child(4n){background:#e8f6ff}.cell:nth-child(4n+1){background:#fff6c9}.cell:nth-child(4n+2){background:#dcf8e9}.cell:nth-child(4n+3){background:#e9e1ff}
+.special{font-size:10px;position:absolute;right:3px;bottom:3px;text-align:center}
+.qmark{font-size:22px}
+.ladder{color:#8b4b09;font-size:25px}.snake{font-size:25px}
+.tokens{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);display:flex;gap:2px;flex-wrap:wrap;justify-content:center;width:80%}
+.token{width:27px;height:27px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 5px #0005;display:grid;place-items:center;color:#fff;font-size:12px}
+.t1{background:#e53935}.t2{background:#1976d2}.t3{background:#2e9d50}.t4{background:#f3a000}
+.panel{padding:18px}
+.turn{background:#e9f7ff;border:2px solid #70c8ed;border-radius:14px;padding:12px;margin-bottom:12px}
+.turn strong{font-size:20px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+.stat{padding:10px;border-radius:12px;background:#f4f7fa;text-align:center}.stat b{display:block;font-size:22px}
+.question{border-radius:16px;background:#f7faff;border:2px solid #d5e7f2;padding:15px}
+.question h2{margin:0 0 8px;font-size:20px}
+.options{display:grid;gap:8px;margin-top:10px}
+.opt{border:2px solid #b9cedb;background:#fff;border-radius:11px;padding:10px;text-align:left;font-weight:bold}
+.opt:hover:not(:disabled){border-color:#1187c7;background:#eaf8ff}
+.opt.correct{background:#d8f8df;border-color:#25a64a}.opt.wrong{background:#ffe0e0;border-color:#dc3636}
+.feedback{margin-top:10px;padding:10px;border-radius:10px;font-weight:bold;display:none}
+.feedback.show{display:block}.ok{background:#d8f8df;color:#176b2b}.bad{background:#ffe0e0;color:#9d2222}
+.dice-area{text-align:center;margin-top:14px;padding:14px;border-radius:16px;background:#0b4f87;color:white}
+.dice{font-size:65px;line-height:1;margin:4px}
+#rollBtn{width:100%;border:0;border-radius:12px;padding:13px;background:#ffbd18;color:#1a2a3a;font-weight:900;font-size:20px}
+#rollBtn:disabled{opacity:.45;cursor:not-allowed}
+.controls{display:flex;gap:8px;margin-top:10px}.controls button{flex:1;padding:10px;border:0;border-radius:10px;font-weight:bold}
+.reset{background:#e9edf1}.newgame{background:#20a45a;color:white}
+.log{max-height:150px;overflow:auto;margin-top:12px;background:#f5f7f9;padding:9px;border-radius:10px;font-size:13px}
+.info{margin-top:12px;padding:12px;background:#fffbe2;border:1px solid #f0d35b;border-radius:12px;font-size:13px}
+.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:18px;z-index:10}
+.modal.show{display:flex}.modalbox{background:white;border-radius:20px;padding:24px;max-width:480px;width:100%;text-align:center}
+.modalbox h2{font-size:30px;margin:5px}
+.close{border:0;background:#0b63a3;color:white;padding:11px 25px;border-radius:10px;font-weight:bold}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.board{max-width:760px;margin:auto}.panel{padding:14px}}
+@media(max-width:560px){.app{padding:8px}.layout{gap:8px}.board-wrap{padding:6px}.cell{padding:2px;font-size:10px}.ladder,.snake{font-size:17px}.qmark{font-size:16px}.token{width:20px;height:20px;font-size:9px;border-width:2px}header{padding:14px}.stats{grid-template-columns:repeat(4,1fr)}.stat{padding:7px}.stat b{font-size:17px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <h1>🐍 Ular Tangga TJKT / DDTKJ 🎲</h1>
+  <p>Jawab pertanyaan dengan benar, lalu kamu boleh melempar dadu!</p>
+</header>
+<div class="layout">
+  <section class="card board-wrap"><div id="board" class="board"></div></section>
+  <aside class="card panel">
+    <div class="turn">Giliran: <strong id="turnName">Pemain 1</strong><br>Posisi: <b id="turnPos">1</b></div>
+    <div class="stats">
+      <div class="stat">Pemain 1<b id="p1pos">1</b></div>
+      <div class="stat">Pemain 2<b id="p2pos">1</b></div>
+      <div class="stat">Pemain 3<b id="p3pos">1</b></div>
+      <div class="stat">Pemain 4<b id="p4pos">1</b></div>
+    </div>
+    <div class="question">
+      <h2 id="qtext">Pertanyaan akan muncul di sini.</h2>
+      <div id="options" class="options"></div>
+      <div id="feedback" class="feedback"></div>
+    </div>
+    <div class="dice-area">
+      <div>Dadu</div><div id="dice" class="dice">🎲</div>
+      <button id="rollBtn" disabled>🎲 LEMPAR DADU</button>
+    </div>
+    <div class="controls">
+      <button class="newgame" id="newBtn">Permainan Baru</button>
+      <button class="reset" id="resetBtn">Reset</button>
+    </div>
+    <div class="log" id="log"></div>
+    <div class="info"><b>Aturan:</b> Jawab benar → lempar dadu. Jawab salah → giliran tetap, soal baru setelah memilih lanjut. Kotak ❓ mewajibkan soal. 🪜 naik, 🐍 turun, ⭐ bonus +2 langkah. Sampai kotak 100 untuk menang.</div>
+  </aside>
+</div>
+</div>
+<div class="modal" id="modal"><div class="modalbox"><div style="font-size:60px">🏆</div><h2 id="winner"></h2><p>Selamat! Kamu mencapai kotak 100.</p><button class="close" id="closeModal">Main Lagi</button></div></div>
+
+<script>
+const questions=[
+["Apa fungsi router dalam jaringan komputer?",["Menghubungkan beberapa jaringan","Mencetak dokumen","Menyimpan file","Mengedit gambar"],0],
+["Perangkat yang menghubungkan komputer dalam satu LAN disebut ...",["Switch","Scanner","Monitor","Projector"],0],
+["Kepanjangan LAN adalah ...",["Local Area Network","Large Access Network","Local Application Node","Line Area Network"],0],
+["Kabel yang umum digunakan pada jaringan Ethernet adalah ...",["UTP","HDMI","VGA","RCA"],0],
+["Konektor kabel UTP adalah ...",["RJ45","USB-C","BNC saja","RJ11 untuk Ethernet"],0],
+["IPv4 memiliki panjang alamat ...",["32 bit","64 bit","128 bit","16 bit"],0],
+["IPv6 memiliki panjang alamat ...",["128 bit","32 bit","48 bit","256 bit"],0],
+["Protokol yang digunakan untuk menerjemahkan nama domain menjadi alamat IP adalah ...",["DNS","FTP","SMTP","SSH"],0],
+["DHCP berfungsi untuk ...",["Memberikan konfigurasi IP secara otomatis","Mengirim email","Menyimpan web","Mengompresi file"],0],
+["Perintah Windows untuk melihat konfigurasi IP adalah ...",["ipconfig","ping","mkdir","format"],0],
+["Perintah untuk menguji konektivitas jaringan adalah ...",["ping","copy","del","dir"],0],
+["Topologi dengan satu perangkat pusat disebut ...",["Star","Bus","Ring","Mesh"],0],
+["Pada topologi star, perangkat pusat biasanya berupa ...",["Switch","Printer","Speaker","Scanner"],0],
+["MAC address digunakan sebagai identitas pada ...",["Antarmuka jaringan","Keyboard","Monitor","Printer tinta"],0],
+["Kepanjangan TCP adalah ...",["Transmission Control Protocol","Transfer Computer Port","Technical Control Program","Terminal Connection Protocol"],0],
+["HTTP umumnya digunakan untuk ...",["Mengakses layanan web","Mengirim listrik","Mengatur keyboard","Mencetak"],0],
+["HTTPS merupakan HTTP yang menggunakan ...",["Enkripsi/TLS","Kabel koaksial saja","Bluetooth saja","FTP"],0],
+["Firewall berfungsi untuk ...",["Mengontrol lalu lintas jaringan","Mempercepat monitor","Mencetak dokumen","Mengganti RAM"],0],
+["Antivirus digunakan untuk membantu melindungi komputer dari ...",["Malware","Debu","Kelembapan","Listrik statis saja"],0],
+["SSID pada WLAN adalah ...",["Nama jaringan Wi-Fi","Alamat rumah","Nama komputer saja","Jenis kabel"],0],
+["Perangkat yang menyediakan akses Wi-Fi disebut ...",["Access Point","UPS","RAM","CPU"],0],
+["WAN mencakup area yang ...",["Luas/geografis besar","Satu meja","Satu ruangan saja","Satu komputer"],0],
+["Ping menggunakan protokol ...",["ICMP","HTML","CSS","SMTP"],0],
+["Subnet mask digunakan untuk ...",["Menentukan bagian network dan host","Membuat akun email","Menghapus virus","Mengganti password BIOS"],0],
+["Gateway pada jaringan digunakan sebagai ...",["Jalur keluar menuju jaringan lain","Penyimpan file","Monitor jaringan saja","Konektor USB"],0],
+["DNS adalah singkatan dari ...",["Domain Name System","Digital Network Server","Data Name Service","Domain Network Security"],0],
+["VPN membuat koneksi jaringan yang ...",["Lebih aman/terenkripsi melalui jaringan publik","Selalu lebih cepat","Tanpa alamat IP","Tanpa autentikasi"],0],
+["FTP digunakan untuk ...",["Transfer file","Streaming radio saja","Mengedit gambar","Membuat kabel"],0],
+["SSH digunakan untuk ...",["Akses/administrasi perangkat secara aman","Mencetak foto","Menggambar topologi","Mengukur suhu"],0],
+["Bandwidth menunjukkan ...",["Kapasitas transfer data","Ukuran monitor","Jumlah keyboard","Daya baterai"],0],
+["Latency adalah ...",["Waktu tunda pengiriman data","Ukuran kabel","Jumlah port","Kapasitas hard disk"],0],
+["Perangkat untuk menghubungkan jaringan berbeda adalah ...",["Router","Hub USB","Keyboard","Webcam"],0],
+["Hub bekerja dengan cara ...",["Meneruskan data ke semua port","Mengenkripsi semua data","Menentukan rute internet","Menyimpan DNS"],0],
+["Switch umumnya meneruskan frame berdasarkan ...",["MAC address","Nama pengguna","Ukuran monitor","Warna kabel"],0],
+["Alat untuk memasang konektor RJ45 ke kabel UTP adalah ...",["Crimping tool","Obeng plus saja","Tang potong saja","Solder listrik saja"],0],
+["Urutan warna kabel straight biasanya menggunakan standar ...",["T568A/T568B sesuai skema","VGA","HDMI","USB"],0],
+["Kepanjangan WLAN adalah ...",["Wireless Local Area Network","Wide Local Access Node","Web LAN","Wireless Large Area Network"],0],
+["Contoh media transmisi nirkabel adalah ...",["Gelombang radio","Serat optik","Kabel UTP","Kabel coaxial"],0],
+["Serat optik mentransmisikan data menggunakan ...",["Cahaya","Suara","Arus air","Magnet saja"],0],
+["Keunggulan utama fiber optic adalah ...",["Bandwidth tinggi dan tahan interferensi elektromagnetik","Selalu tanpa alat tambahan","Tidak perlu konektor","Tidak membutuhkan cahaya"],0],
+["PBB pada jaringan kabel berarti ...",["Pengujian/pengecekan jalur sesuai konteks instalasi","Paket bandwidth besar","Program basis biner","Perangkat broadband"],0],
+["K3LH berkaitan dengan ...",["Keselamatan, kesehatan kerja dan lingkungan hidup","Kecepatan internet","Desain web","Pemrograman game"],0],
+["Sebelum bekerja dengan perangkat jaringan, tindakan aman yang tepat adalah ...",["Memeriksa kondisi alat dan lingkungan kerja","Langsung menyalakan semua alat","Melepas semua kabel sembarangan","Bekerja tanpa SOP"],0],
+["IP address 192.168.1.10 termasuk alamat ...",["Private IPv4","Public IPv6","MAC address","Broadcast IPv6"],0],
+["Alamat loopback IPv4 yang umum adalah ...",["127.0.0.1","192.168.1.1","8.8.8.8","255.255.255.0"],0],
+["Port standar HTTP adalah ...",["80","21","25","110"],0],
+["Port standar HTTPS adalah ...",["443","53","22","23"],0],
+["Port standar DNS adalah ...",["53","80","443","3389"],0],
+["Alat untuk menguji susunan kabel UTP adalah ...",["LAN cable tester","Multimeter audio","Scanner","Router"],0],
+["Tujuan dokumentasi jaringan adalah ...",["Memudahkan pemeliharaan dan troubleshooting","Menghapus konfigurasi","Mengurangi keamanan","Mengganti semua kabel"],0]
+];
+
+const ladders={4:14,9:31,20:38,28:84,40:59,51:67,63:81,71:91};
+const snakes={17:7,54:34,62:19,64:60,87:24,93:73,95:75,98:79};
+const bonus={15:2,35:3,50:2,68:3,83:2};
+const players=[
+{name:"Pemain 1",pos:1,cls:"t1"},{name:"Pemain 2",pos:1,cls:"t2"},
+{name:"Pemain 3",pos:1,cls:"t3"},{name:"Pemain 4",pos:1,cls:"t4"}];
+let current=0, answered=false, moving=false, usedQuestions=[], qIndex=-1;
+
+const $=id=>document.getElementById(id);
+function boardOrder(){
+  let a=[]; for(let row=9;row>=0;row--){let nums=[];for(let c=1;c<=10;c++)nums.push(row*10+c);if((9-row)%2)nums.reverse();a.push(...nums)} return a;
+}
+function renderBoard(){
+  const b=$("board"); b.innerHTML="";
+  boardOrder().forEach(n=>{
+    const c=document.createElement("div");c.className="cell";c.id="cell-"+n;c.innerHTML="<span>"+n+"</span>";
+    if(ladders[n])c.innerHTML+=`<div class="special ladder">🪜<br>+${ladders[n]-n}</div>`;
+    if(snakes[n])c.innerHTML+=`<div class="special snake">🐍<br>-${n-snakes[n]}</div>`;
+    if(bonus[n])c.innerHTML+=`<div class="special">⭐<br>+${bonus[n]}</div>`;
+    if([12,25,37,49,61,72,85].includes(n))c.innerHTML+=`<div class="special qmark">❓</div>`;
+    const tok=document.createElement("div");tok.className="tokens";tok.id="tokens-"+n;c.appendChild(tok);b.appendChild(c);
+  });
+  renderTokens();
+}
+function renderTokens(){
+  document.querySelectorAll(".tokens").forEach(x=>x.innerHTML="");
+  players.forEach((p,i)=>{
+    const t=document.createElement("div");t.className="token "+p.cls;t.textContent=i+1;
+    $("tokens-"+p.pos).appendChild(t);
+    $("p"+(i+1)+"pos").textContent=p.pos;
+  });
+}
+function nextQuestion(){
+  if(usedQuestions.length===questions.length)usedQuestions=[];
+  let idx; do{idx=Math.floor(Math.random()*questions.length)}while(usedQuestions.includes(idx));
+  usedQuestions.push(idx);qIndex=idx;answered=false;
+  const q=questions[idx];$("qtext").textContent=q[0];$("options").innerHTML="";
+  $("feedback").className="feedback";$("feedback").textContent="";
+  q[1].forEach((text,i)=>{
+    const btn=document.createElement("button");btn.className="opt";btn.textContent=String.fromCharCode(65+i)+". "+text;
+    btn.onclick=()=>answer(i,btn);$("options").appendChild(btn);
+  });
+  $("rollBtn").disabled=true;
+}
+function answer(choice,btn){
+  if(answered||moving)return; answered=true;
+  const q=questions[qIndex], opts=document.querySelectorAll(".opt");
+  opts.forEach(x=>x.disabled=true); opts[q[2]].classList.add("correct");
+  if(choice===q[2]){
+    btn.classList.add("correct");$("feedback").className="feedback show ok";$("feedback").textContent="✅ Benar! Kamu boleh melempar dadu.";
+    $("rollBtn").disabled=false;
+  }else{
+    btn.classList.add("wrong");$("feedback").className="feedback show bad";
+    $("feedback").textContent="❌ Salah. Jawaban yang benar: "+q[1][q[2]]+". Giliran berpindah.";
+    setTimeout(()=>{nextTurn()},1400);
+  }
+}
+function roll(){
+  if(!answered||moving)return;
+  moving=true;$("rollBtn").disabled=true;
+  let face=0,steps=0;
+  const timer=setInterval(()=>{
+    face=Math.floor(Math.random()*6)+1;$("dice").textContent=["","⚀","⚁","⚂","⚃","⚄","⚅"][face];
+    if(++steps>=10){clearInterval(timer);movePlayer(face)}
+  },80);
+}
+function movePlayer(n){
+  const p=players[current];let target=Math.min(100,p.pos+n);
+  let step=p.pos;
+  const timer=setInterval(()=>{
+    if(step>=target){clearInterval(timer);land();return}
+    step++;p.pos=step;renderTokens();
+  },120);
+}
+function land(){
+  const p=players[current];let old=p.pos;
+  if(p.pos===100){$("winner").textContent="🎉 "+p.name+" MENANG!";$("modal").classList.add("show");log(p.name+" mencapai kotak 100 dan menang!");moving=false;return}
+  if(ladders[p.pos]){let to=ladders[p.pos];log(p.name+" naik tangga dari "+p.pos+" ke "+to+" 🪜");p.pos=to;renderTokens()}
+  else if(snakes[p.pos]){let to=snakes[p.pos];log(p.name+" terkena ular dari "+p.pos+" ke "+to+" 🐍");p.pos=to;renderTokens()}
+  else if(bonus[p.pos]){let to=Math.min(100,p.pos+bonus[p.pos]);log(p.name+" mendapat bonus dari "+p.pos+" ke "+to+" ⭐");p.pos=to;renderTokens()}
+  else log(p.name+" melempar "+$("dice").textContent+" dan berhenti di kotak "+old+".");
+  if(p.pos===100){$("winner").textContent="🏆 "+p.name+" MENANG!";$("modal").classList.add("show");moving=false;return}
+  setTimeout(()=>nextTurn(),600);
+}
+function nextTurn(){
+  current=(current+1)%players.length;moving=false;
+  $("turnName").textContent=players[current].name;$("turnPos").textContent=players[current].pos;
+  $("dice").textContent="🎲";nextQuestion();
+}
+function log(s){const el=$("log");el.innerHTML="<div>• "+s+"</div>"+el.innerHTML}
+function reset(){
+  players.forEach(p=>p.pos=1);current=0;usedQuestions=[];moving=false;
+  $("modal").classList.remove("show");$("turnName").textContent="Pemain 1";$("turnPos").textContent="1";$("dice").textContent="🎲";$("log").innerHTML="";
+  renderTokens();nextQuestion();log("Permainan dimulai. Jawab benar untuk mendapatkan kesempatan melempar dadu.");
+}
+$("rollBtn").onclick=roll;$("resetBtn").onclick=reset;$("newBtn").onclick=reset;$("closeModal").onclick=reset;
+renderBoard();reset();
+</script>
+</body>
+</html>
